@@ -53,32 +53,41 @@ def main():
     message_to_send = 'It is a very long long message to send throw channel in bytes with pickle transformation'
     protocols: List[ProtocolT] = ['go_back_n', 'selective_repeat']
     transmission_error_probabilities = np.linspace(0, 0.9, 20)
-    transmission_error_probability = 0.3
     window_sizes = list(range(1, 26))
-    window_size = 3
+    tests_count = 5
     df_ws = pd.DataFrame(columns=['protocol', 'window_size', 'k', 'elapsed_time'])
     df_tep = pd.DataFrame(columns=['protocol', 'transmission_error_probability', 'k', 'elapsed_time'])
+    base_path = os.path.join('applied_task', 'network_layer', 'link_layer')
 
+    transmission_error_probability = 0.3
     for protocol in protocols:
         for window_size in window_sizes:
-            k, elapsed_time = run(message_to_send, window_size, transmission_error_probability, protocol)
-            df_ws = df_ws.append(dict(protocol=protocol, window_size=window_size, k=k, elapsed_time=elapsed_time),
-                                 ignore_index=True)
+            ks, elapsed_times = [], []
+            for _ in range(tests_count):
+                k, elapsed_time = run(message_to_send, window_size, transmission_error_probability, protocol)
+                ks.append(k)
+                elapsed_times.append(elapsed_time)
+            df_ws = df_ws.append(dict(protocol=protocol, window_size=window_size, k=np.mean(ks),
+                                      elapsed_time=np.mean(elapsed_times)), ignore_index=True)
 
-    for protocol in protocols:
-        for transmission_error_probability in transmission_error_probabilities:
-            k, elapsed_time = run(message_to_send, window_size, transmission_error_probability, protocol)
-            df_tep = df_tep.append(dict(protocol=protocol, k=k, elapsed_time=elapsed_time,
-                                        transmission_error_probability=transmission_error_probability),
-                                   ignore_index=True)
-
-    base_path = os.path.join('applied_task', 'network_layer', 'link_layer')
     fig_ws_k = px.line(df_ws[['protocol', 'window_size', 'k']], x='window_size', y='k', color='protocol')
     fig_ws_k.write_html(os.path.join(base_path, 'window_size_k.html'))
 
     fig_ws_elapsed_time = px.line(df_ws[['protocol', 'window_size', 'elapsed_time']], x='window_size', y='elapsed_time',
                                   color='protocol')
     fig_ws_elapsed_time.write_html(os.path.join(base_path, 'window_size_elapsed_time.html'))
+
+    window_size = 3
+    for protocol in protocols:
+        for transmission_error_probability in transmission_error_probabilities:
+            ks, elapsed_times = [], []
+            for _ in range(tests_count):
+                k, elapsed_time = run(message_to_send, window_size, transmission_error_probability, protocol)
+                ks.append(k)
+                elapsed_times.append(elapsed_time)
+            df_tep = df_tep.append(dict(protocol=protocol, k=np.mean(ks), elapsed_time=np.mean(elapsed_times),
+                                        transmission_error_probability=transmission_error_probability),
+                                   ignore_index=True)
 
     fig_tep_k = px.line(df_tep[['protocol', 'transmission_error_probability', 'k']], x='transmission_error_probability',
                         y='k', color='protocol')
