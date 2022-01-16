@@ -120,7 +120,7 @@ class DesignatedRouter:
         while not stop_event.is_set():
             if connection_off_event.is_set():
                 for active_node in self._active_nodes:
-                    if random() > self._disconnection_probabilities[active_node]:
+                    if random() < self._disconnection_probabilities[active_node]:
                         is_need_set_topology = True
                         connection_off_event.clear()
                         self._topology.remove_node(active_node)
