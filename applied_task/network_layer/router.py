@@ -162,6 +162,7 @@ class Router:
             if self._dr_link_input.not_empty():
                 message = self._dr_link_input.receive()
                 if message.type == MessageType.SET_TOPOLOGY:
+                    self._logger.info('received topology')
                     self._set_topology(message.data)
                 elif message.type == MessageType.DISCONNECT:
                     active = False
